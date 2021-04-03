@@ -143,7 +143,7 @@ namespace SysBot.ACNHOrders.Twitch
         {
             var presets = PresetLoader.GetPresets(Globals.Bot.Config.OrderConfig);
 
-            if (presets.Length < 1)
+            if (presets == null)
                 return "There are not presets available";
             else
                 return $"The following presets are available: {string.Join(", ", presets)}. Enter {prefix}preset [preset name] to order one!";

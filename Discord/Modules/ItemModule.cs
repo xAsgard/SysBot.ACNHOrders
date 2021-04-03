@@ -184,5 +184,60 @@ namespace SysBot.ACNHOrders
             var msg = ItemParser.GetItemText(item);
             await ReplyAsync(msg).ConfigureAwait(false);
         }
+
+        [Command("presets")]
+        [Summary("Shows a list with all presets available.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task RequestPresetListAsync()
+        {
+            var cfg = Globals.Bot.Config;
+            var presets = PresetLoader.GetPresets(cfg.OrderConfig);
+            if (presets == null)
+            {
+                await ReplyAsync($"There are no presets available.").ConfigureAwait(false);
+                return;
+            }
+
+            var result = string.Join(Environment.NewLine, presets);
+
+            const int maxLength = 500;
+            if (result.Length > maxLength)
+            {
+                result = result.Substring(0, maxLength) + "...[truncated]";
+            }
+
+            await ReplyAsync($"The following presets are available. Use {Format.Code(cfg.Prefix + "preset <preset name>")} to order it. {Format.Code(result)}").ConfigureAwait(false);
+
+        }
+
+        [Command("presetcontent")]
+        [Summary("Shows a list with items of an available presets.")]
+        [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
+        public async Task RequestPresetListAsync([Remainder] string presetName)
+        {
+            var cfg = Globals.Bot.Config;
+
+            presetName = presetName.Trim();
+            var preset = PresetLoader.GetPreset(cfg.OrderConfig, presetName);
+            if (preset == null)
+            {
+                await ReplyAsync($"{Context.User.Mention} - {presetName} is not a valid preset.");
+                return;
+            }
+
+            var itemList = "";
+
+            foreach (Item item in preset)
+            {
+                if (!item.IsNone)
+                {
+                    var itemName = GameInfo.Strings.GetItemName(item);
+                    itemList += $"{itemName}{Environment.NewLine}";
+                }
+            }
+
+            await ReplyAsync($"Content of {presetName} {Format.Code(itemList)}").ConfigureAwait(false);
+
+        }
     }
 }

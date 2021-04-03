@@ -33,14 +33,21 @@ namespace SysBot.ACNHOrders
             return GetPreset(path);
         }
 
-        public static string[] GetPresets(OrderBotConfig cfg)
+        public static string[]? GetPresets(OrderBotConfig cfg)
         {
-            var files = Directory.GetFiles(cfg.NHIPresetsDirectory);
-            var presets = new string[files.Length];
-            for(int i = 0; i < files.Length; ++i)
-                presets[i] = Path.GetFileNameWithoutExtension(files[i]);
+            if (Directory.Exists(cfg.NHIPresetsDirectory))
+            {
+                var files = Directory.GetFiles(cfg.NHIPresetsDirectory);
+                var presets = new string[files.Length];
+                for (int i = 0; i < files.Length; ++i)
+                    presets[i] = Path.GetFileNameWithoutExtension(files[i]);
 
-            return presets;
+                return presets;
+            } else
+            {
+                LogUtil.LogInfo($"{cfg.NHIPresetsDirectory} does not exist.", nameof(PresetLoader));
+                return null;
+            }
         }
     }
 }
