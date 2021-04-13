@@ -63,7 +63,7 @@ namespace SysBot.ACNHOrders
                 ssa.MaximumTransferSize = cfg.MapPullChunkSize;
 
             if (File.Exists("dodo.png") && File.Exists("dodo.ttf"))
-                DodoImageDrawer = new DodoDraw();
+                DodoImageDrawer = new DodoDraw(Config.DodoModeConfig.DodoFontPercentageSize);
 
             DodoPosition = new DodoPositionHelper(this);
             VisitorList = new VisitorListHelper(this);
@@ -625,7 +625,7 @@ namespace SysBot.ACNHOrders
                 if (!Config.AllowKnownAbusers)
                 {
                     LogUtil.LogInfo($"{LastArrival} from {LastArrivalIsland} is a known abuser. Starting next order...", Config.IP);
-                    order.OrderCancelled(this, $"{LastArrival} from {LastArrivalIsland} is a known abuser. You cannot use this bot.", false);
+                    order.OrderCancelled(this, $"You are a known abuser. You cannot use this bot.", false);
                     return OrderResult.NoArrival;
                 }
                 else
@@ -733,14 +733,20 @@ namespace SysBot.ACNHOrders
             await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
             // Wait for "closing software" wheel
-            await Task.Delay(1_000, token).ConfigureAwait(false);
+            await Task.Delay(3_500 + Config.RestartGameWait, token).ConfigureAwait(false);
+
+            await Click(SwitchButton.A, 1_000 + Config.RestartGameWait, token).ConfigureAwait(false);
+
+            // Click away from any system updates if requested
+            if (Config.AvoidSystemUpdate)
+                await Click(SwitchButton.DUP, 0_600, token).ConfigureAwait(false);
 
             // Start game
-            for (int i = 0; i < 4; ++i)
+            for (int i = 0; i < 2; ++i)
                 await Click(SwitchButton.A, 1_000 + Config.RestartGameWait, token).ConfigureAwait(false);
 
             // Wait for "checking if the game can be played" wheel
-            await Task.Delay(8_000 + Config.RestartGameWait, token).ConfigureAwait(false);
+            await Task.Delay(5_000 + Config.RestartGameWait, token).ConfigureAwait(false);
 
             for (int i = 0; i < 3; ++i)
                 await Click(SwitchButton.A, 1_000, token).ConfigureAwait(false);

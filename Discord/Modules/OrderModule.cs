@@ -238,7 +238,7 @@ namespace SysBot.ACNHOrders
         [Command("removeAlt")]
         [Alias("removeLog", "rmAlt")]
         [Summary("Removes an identity (name-id) from the local user-to-villager AntiAbuse database")]
-        public async Task RemoveAltAsync(string identity)
+        public async Task RemoveAltAsync([Remainder]string identity)
         {
             if (AntiAbuse.CurrentInstance.Remove(identity))
                 await ReplyAsync($"{identity} has been removed from the database.").ConfigureAwait(false);
@@ -300,6 +300,12 @@ namespace SysBot.ACNHOrders
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, VillagerRequest? vr, bool catalogue = false)
         {
+            if (!Globals.Bot.Config.AllowKnownAbusers && AntiAbuse.CurrentInstance.IsGlobalBanned(orderer.Id))
+            {
+                await ReplyAsync($"{Context.User.Mention} - You are not permitted to use this bot.");
+                return;
+            }
+
             if (Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode || Globals.Bot.Config.SkipConsoleBotCreation)
             {
                 await ReplyAsync($"{Context.User.Mention} - Orders are not currently accepted.");
@@ -387,7 +393,7 @@ namespace SysBot.ACNHOrders
             if (!VillagerResources.IsVillagerDataKnown(internalName))
                 internalName = GameInfo.Strings.VillagerMap.FirstOrDefault(z => string.Equals(z.Value, internalName, StringComparison.InvariantCultureIgnoreCase)).Key;
 
-            if (IsUnadoptable(nameSearched))
+            if (IsUnadoptable(nameSearched) || IsUnadoptable(internalName))
             {
                 result = $"{nameSearched} is not adoptable. Order setup required for this villager is unnecessary.";
                 return VillagerRequestResult.InvalidVillagerRequested;
@@ -414,6 +420,6 @@ namespace SysBot.ACNHOrders
             "shp14"
         };
 
-        public static bool IsUnadoptable(string internalName) => UnadoptableVillagers.Contains(internalName.ToLower());
+        public static bool IsUnadoptable(string? internalName) => UnadoptableVillagers.Contains(internalName == null ? string.Empty : internalName.Trim().ToLower());
     }
 }
