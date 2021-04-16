@@ -211,6 +211,7 @@ namespace SysBot.ACNHOrders
         }
 
         [Command("presetcontent")]
+        [Alias("pc")]
         [Summary("Shows a list with items of an available presets.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestPresetListAsync([Remainder] string presetName)
@@ -226,17 +227,20 @@ namespace SysBot.ACNHOrders
             }
 
             var itemList = "";
+            int itemCount = 0;
 
             foreach (Item item in preset)
             {
                 if (!item.IsNone)
                 {
+                    itemCount++;
                     var itemName = GameInfo.Strings.GetItemName(item);
-                    itemList += $"{itemName}{Environment.NewLine}";
+                    itemList += $"{itemCount:00}: {item.ItemId:X4} {itemName}{Environment.NewLine}";
+                    
                 }
             }
 
-            await ReplyAsync($"Content of {presetName} {Format.Code(itemList)}").ConfigureAwait(false);
+            await ReplyAsync($"There are {itemCount:00} items in preset {Format.Code(presetName)}:{Format.Code(itemList)}").ConfigureAwait(false);
 
         }
     }
