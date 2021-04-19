@@ -38,6 +38,7 @@ namespace SysBot.ACNHOrders
             if (Directory.Exists(cfg.NHIPresetsDirectory))
             {
                 var files = Directory.GetFiles(cfg.NHIPresetsDirectory);
+                System.Array.Sort(files);
                 var presets = new string[files.Length];
                 for (int i = 0; i < files.Length; ++i)
                     presets[i] = Path.GetFileNameWithoutExtension(files[i]);
