@@ -49,10 +49,10 @@ namespace SysBot.ACNHOrders
             Trader.SendMessageAsync($"I'm waiting for you {Trader.Username}! {msg}. Your Dodo code is **{dodo}**");
         }
 
-        public void OrderFinished(CrossBot routine, string msg)
+        public void OrderFinished(CrossBot routine, string msg, string botname = "CrossBot")
         {
             OnFinish?.Invoke(routine);
-            Trader.SendMessageAsync($"Your order is complete, Thanks for your order! {msg}");
+            Trader.SendMessageAsync($"Your order is complete. Thank you for shopping with {botname}. {msg}");
         }
 
         public void SendNotification(CrossBot routine, string msg)

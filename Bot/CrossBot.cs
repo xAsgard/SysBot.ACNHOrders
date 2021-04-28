@@ -679,7 +679,7 @@ namespace SysBot.ACNHOrders
                 await DropLoop(token).ConfigureAwait(false);
                 await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
-                if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > (Config.OrderConfig.UserTimeAllowed - 60) && !warned)
+                if (Math.Abs((DateTime.Now - startTime).TotalSeconds) > (Config.OrderConfig.UserTimeAllowed - 70) && !warned)
                 {
                     order.SendNotification(this, "You have 60 seconds remaining before I start the next order. Please ensure you can collect your items and leave within that time.");
                     warned = true;
@@ -704,7 +704,7 @@ namespace SysBot.ACNHOrders
 
             LogUtil.LogInfo($"Order completed. Notifying visitor of completion.", Config.IP);
             await UpdateBlocker(true, token).ConfigureAwait(false);
-            order.OrderFinished(this, Config.OrderConfig.CompleteOrderMessage);
+            order.OrderFinished(this, Config.OrderConfig.CompleteOrderMessage, Config.Name);
             if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
                 await AttemptEchoHook($"> Visitor completed order, and is now leaving: {order.VillagerName}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
             

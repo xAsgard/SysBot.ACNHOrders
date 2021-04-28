@@ -27,7 +27,7 @@ namespace SysBot.ACNHOrders
         {
         }
 
-        public void OrderFinished(CrossBot routine, string msg)
+        public void OrderFinished(CrossBot routine, string msg, string botname = "CrossBot")
         {
         }
 

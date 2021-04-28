@@ -55,10 +55,10 @@ namespace SysBot.ACNHOrders.Twitch
                 SendMessage($"I'm waiting for you @{Trader}! {msg}. Your Dodo code is {dodo}", Settings.OrderWaitDestination);
         }
 
-        public void OrderFinished(CrossBot routine, string msg)
+        public void OrderFinished(CrossBot routine, string msg, string botname = "CrossBot")
         {
             OnFinish?.Invoke(routine);
-            SendMessage($"@{Trader} - Your order is complete, Thanks for your order! {msg}", Settings.OrderFinishDestination);
+            SendMessage($"@{Trader} - Your order is complete. Thanks for shopping with {botname} {msg}", Settings.OrderFinishDestination);
         }
 
         public void SendNotification(CrossBot routine, string msg)
