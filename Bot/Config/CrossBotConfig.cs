@@ -24,6 +24,12 @@ namespace SysBot.ACNHOrders
 
         /// <summary> Users with this role are allowed to interact with the bot. If "@everyone", anyone can interact. </summary>
         public string RoleUseBot { get; set; } = "@everyone";
+        
+        /// <summary> Role for Temp Bot usage</summary>
+        public string RoleUseBotTemp { get; set; } = "@everyone";
+
+        /// <summary> After which time the Temp Role should be removed. 3 days = 259200 seconds</summary>
+        public int TempRoleTime { get; set; } = 259200;
 
         // 64bit numbers white-listing certain channels/users for permission
         public List<ulong> Channels { get; set; } = new();

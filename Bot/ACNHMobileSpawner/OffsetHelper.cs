@@ -24,7 +24,7 @@
         // main save offsets
         public const ulong TurnipAddress = 0xAD618B84;
         public const ulong VillagerAddress = TurnipAddress - 0x2d40 - 0x43be2c + 0x10;
-        public const ulong VillagerHouseAddress = TurnipAddress - 0x2d40 - 0x43be2c + 0x43abd4;
+        public const ulong VillagerHouseAddress = TurnipAddress - 0x2d40 - 0x43be2c + 0x43abe4;
         public const ulong BackupSaveDiff = 0x86D590;
 
         public const ulong FieldItemStart = VillagerAddress - 0x10 + 0x22e1b8;
@@ -41,7 +41,7 @@
 
         public const ulong DodoAddress = 0xA98F15C;
         public const ulong OnlineSessionAddress = 0x920E740;
-        public const ulong OnlineSessionVisitorAddress = 0x9F974B8;
+        public const ulong OnlineSessionVisitorAddress = 0x9D3DFB0;
         public const ulong OnlineSessionVisitorSize = 0x448; // reverse order
 
         public const ulong TimeAddress = 0x0BAC54E8;
