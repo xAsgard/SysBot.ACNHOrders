@@ -48,6 +48,21 @@ namespace SysBot.ACNHOrders
             await ReplyAsync($"Sending request to fetch a new dodo code.").ConfigureAwait(false);
         }
 
+        [Command("timer")]
+        [Alias("timedDodo", "delayDodo")]
+        [Summary("Tells the bot to restart the game after a delay and fetch a new dodo code. Only works in dodo restore mode.")]
+        [RequireSudo]
+        public async Task DelayFetchNewDodo(int timeDelayMinutes)
+        {
+            _ = Task.Run(async () =>
+              {
+                  await Task.Delay(timeDelayMinutes * 60_000, CancellationToken.None).ConfigureAwait(false);
+                  Globals.Bot.RestoreRestartRequested = true;
+                  await ReplyAsync($"Fetching a new dodo code shortly.").ConfigureAwait(false);
+              }, CancellationToken.None).ConfigureAwait(false);
+            await ReplyAsync($"Sending request to fetch a new dodo code after {timeDelayMinutes} minutes.").ConfigureAwait(false);
+        }
+
         [Command("speak")]
         [Alias("talk", "say")]
         [Summary("Tells the bot to speak during times when people are on the island.")]
@@ -80,13 +95,8 @@ namespace SysBot.ACNHOrders
         private async Task SetScreen(bool on)
         {
             var bot = Globals.Bot;
-            if (!bot.Config.ExperimentalSleepScreenOnIdle)
-            {
-                await ReplyAsync("Sleep screen on idle is set to false.").ConfigureAwait(false);
-                return;
-            }
                 
-            await bot.SetScreenCheck(on, CancellationToken.None).ConfigureAwait(false);
+            await bot.SetScreenCheck(on, CancellationToken.None, true).ConfigureAwait(false);
             await ReplyAsync("Screen state set to: " + (on ? "On" : "Off")).ConfigureAwait(false);
         }
     }
