@@ -180,7 +180,7 @@ namespace SysBot.ACNHOrders
                 return;
 
             // We don't want the bot to respond to itself or other bots.
-            if (msg.Author.Id == _client.CurrentUser.Id || (!Bot.Config.IgnoreAllPermissions && msg.Author.IsBot))
+            if (msg.Author.Id == _client.CurrentUser.Id || msg.Author.IsBot)
                 return;
 
             // Create a number to track where the prefix ends and the command begins
@@ -240,18 +240,15 @@ namespace SysBot.ACNHOrders
 
             // Check Permission
             var mgr = Bot.Config;
-            if (!Bot.Config.IgnoreAllPermissions)
+            if (!mgr.CanUseCommandUser(msg.Author.Id))
             {
-                if (!mgr.CanUseCommandUser(msg.Author.Id))
-                {
-                    await msg.Channel.SendMessageAsync("You are not permitted to use this command.").ConfigureAwait(false);
-                    return true;
-                }
-                if (!mgr.CanUseCommandChannel(msg.Channel.Id) && msg.Author.Id != Owner)
-                {
-                    await msg.Channel.SendMessageAsync("You can't use that command here.").ConfigureAwait(false);
-                    return true;
-                }
+                await msg.Channel.SendMessageAsync("You are not permitted to use this command.").ConfigureAwait(false);
+                return true;
+            }
+            if (!mgr.CanUseCommandChannel(msg.Channel.Id) && msg.Author.Id != Owner)
+            {
+                await msg.Channel.SendMessageAsync("You can't use that command here.").ConfigureAwait(false);
+                return true;
             }
 
             // Execute the command. (result does not indicate a return value, 
