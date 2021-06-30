@@ -155,10 +155,12 @@ namespace SysBot.ACNHOrders
                 LogUtil.LogInfo("Force update anchors set to true, no functionality will activate", Config.IP);
 
             LogUtil.LogInfo("Successfully connected to bot. Starting main loop!", Config.IP);
+
             if (!Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && GameIsDirty && Config.Channels.Count > 0)
             {
-                await AttemptEchoHook($"-------------------------------\n**MerchantBot was restarted** [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}]\nPlease order again (using the right channel), if you don't get any updates within **3 minutes**!", Config.Channels, token).ConfigureAwait(false);
+                await AttemptEchoHook($"-------------------------------\n**MerchantBot was restarted** [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}]\nPlease order again (using the right channel), if you don't get any updates within **3 minutes**!\n-------------------------------", Config.Channels, token).ConfigureAwait(false);
             }
+
             if (Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
             {
                 LogUtil.LogInfo("Orders not accepted in dodo restore mode! Please ensure all joy-cons and controllers are docked!", Config.IP);

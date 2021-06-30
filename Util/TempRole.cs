@@ -88,7 +88,7 @@ namespace SysBot.ACNHOrders
         /// Log Temporary User
         /// </summary>
         /// <returns>If temporary user, returns string with state!</returns>
-        public string? LogTempUser(SocketUser trader, string player)
+        public async System.Threading.Tasks.Task<string?> LogTempUserAsync(SocketUser trader, string player)
         {
             if (trader is SocketGuildUser socketUser)
             {
@@ -131,18 +131,20 @@ namespace SysBot.ACNHOrders
                             TempRoleUsers.Add(new TempRoleIdentifier(eFirstOrder.ToString("yyyy-dd-M--HH-mm-ss"), DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss"), "true", id));
                             SaveAllUserInfo();
                             LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: TempRole will be removed for {player}-{id}.", Globals.Bot.Config.IP);
-                            socketUser.RemoveRoleAsync(socketRole).ConfigureAwait(false);
+                            await socketUser.RemoveRoleAsync(socketRole).ConfigureAwait(false);
                             return $"**Your temporary access has unfortunately now expired. Access to MerchantBot will disappear after this order.**";
                         }
                     }
 
-                    LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: Issue with LogTempRole for {player}-{id}.", Globals.Bot.Config.IP);
+                    LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: Issue with TempRole for {player}-{id}.", Globals.Bot.Config.IP);
                     return null;
                 }
 
+                return null;
+
             }
 
-            LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: Issue with LogTempRole for {player}-{trader.Id}.", Globals.Bot.Config.IP);
+            LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: Issue with SocketGuildUser {player}-{trader.Id}.", Globals.Bot.Config.IP);
             return null;
         }
 

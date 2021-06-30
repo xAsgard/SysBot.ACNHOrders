@@ -53,7 +53,7 @@ namespace SysBot.ACNHOrders
             }
 
             // Check for Temp Role
-            string? TempMsg = TempRole.CurrentInstance.LogTempUser(trader, player);
+            string? TempMsg = await TempRole.CurrentInstance.LogTempUserAsync(trader, player).ConfigureAwait(false);
             if (TempMsg!=null)
             {
                 await trader.SendMessageAsync(TempMsg).ConfigureAwait(false);
