@@ -7,7 +7,7 @@ namespace SysBot.ACNHOrders
     public static class PresetLoader
     {
         public static Item[]? GetPreset(string nhiPath)
-        {
+        {                        
             if (!File.Exists(nhiPath))
             {
                 LogUtil.LogInfo($"{nhiPath} does not exist.", nameof(PresetLoader));

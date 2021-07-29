@@ -116,6 +116,7 @@ namespace SysBot.ACNHOrders
                     {
                         DateTime eFirstOrder = DateTime.ParseExact(exists.FirstOrderDate, "yyyy-dd-M--HH-mm-ss", null);
                         DateTime eLastOrder = DateTime.ParseExact(exists.LastOrderDate, "yyyy-dd-M--HH-mm-ss", null);
+                        TempEnd = eFirstOrder.AddSeconds(dTempRoleTime);
                         TempRoleUsers.Remove(exists);
 
                         if (DateTime.Now < eFirstOrder.AddSeconds(dTempRoleTime))

@@ -186,27 +186,39 @@ namespace SysBot.ACNHOrders
         }
 
         [Command("presets")]
+        [Alias("presetlist", "pl")]
         [Summary("Shows a list with all presets available.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task RequestPresetListAsync()
+        public async Task RequestPresetListAsync([Summary("Text to search for within presets (optional)")] string presetText = "")
         {
             var cfg = Globals.Bot.Config;
             var presets = PresetLoader.GetPresets(cfg.OrderConfig);
+
             if (presets == null)
             {
                 await ReplyAsync($"There are no presets available.").ConfigureAwait(false);
                 return;
             }
 
+            presets = Array.FindAll(presets, pr => pr.ToLower().Contains(presetText.ToLower()));
+
             var result = string.Join(Environment.NewLine, presets);
 
-            const int maxLength = 500;
-            if (result.Length > maxLength)
+            
+
+            const int maxLength = 450;
+            if (result.Length < 1)
             {
-                result = result.Substring(0, maxLength) + "...[truncated]";
+                await ReplyAsync($"There are no presets available including {Format.Code(presetText)}.").ConfigureAwait(false);
+                return;
             }
 
-            await ReplyAsync($"The following presets are available. Use {Format.Code(cfg.Prefix + "preset <preset name>")} to order it. {Format.Code(result)}").ConfigureAwait(false);
+            if (result.Length > maxLength)
+            {
+                result = result.Substring(0, maxLength) + "... [too many results]";
+            }
+
+            await ReplyAsync((presetText != "" ? $"The following presets including {Format.Code(presetText)} are available:" : $"The following presets are available:") + $"{Format.Code(result+Environment.NewLine)}Use {Format.Code(cfg.Prefix + "preset <preset name case-sensitive>")} to order it.").ConfigureAwait(false);
 
         }
 
@@ -214,7 +226,7 @@ namespace SysBot.ACNHOrders
         [Alias("pc")]
         [Summary("Shows a list with items of an available presets.")]
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
-        public async Task RequestPresetListAsync([Remainder] string presetName)
+        public async Task RequestPresetContentAsync([Remainder] string presetName)
         {
             var cfg = Globals.Bot.Config;
 
