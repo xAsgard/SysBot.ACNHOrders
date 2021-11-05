@@ -247,7 +247,15 @@ namespace SysBot.ACNHOrders
                 {
                     itemCount++;
                     var itemName = GameInfo.Strings.GetItemName(item);
-                    itemList += $"{itemCount:00}: {item.ItemId:X4} {itemName}{Environment.NewLine}";
+                    var kind = ItemInfo.GetItemKind(item);
+                    string itemIDfix = item.ItemId.ToString();
+
+                    if (kind == ItemKind.Kind_DIYRecipe) {
+                        itemIDfix = $"{item.Count:X3}000016A2";
+                        itemName = itemName.Replace("(DIY recipe) -", "[DIY]");
+                    } else itemIDfix = $"{item.ItemId:X4}";
+
+                    itemList += $"{itemCount:00}: {itemIDfix} {itemName}{Environment.NewLine}";
                     
                 }
             }
