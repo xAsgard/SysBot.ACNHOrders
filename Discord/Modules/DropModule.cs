@@ -5,6 +5,7 @@ using Discord;
 using Discord.Commands;
 using Discord.Net;
 using NHSE.Core;
+using SysBot.Base;
 
 namespace SysBot.ACNHOrders
 {
@@ -65,6 +66,21 @@ namespace SysBot.ACNHOrders
             catch (HttpException ex)
             {
                 await ReplyAsync($"{ex.Message}: Private messages must be open to use this command. I won't leak the Dodo code in this channel!");
+                return;
+            }
+
+            var reaction = Globals.Bot.Config.DodoModeConfig.SuccessfulDodoCodeSendReaction;
+            if (!string.IsNullOrWhiteSpace(reaction))
+            {
+                try
+                {
+                    IEmote emote = reaction.StartsWith("<") ? Emote.Parse(reaction) : new Emoji(reaction);
+                    await Context.Message.AddReactionAsync(emote);
+                }
+                catch 
+                {
+                    LogUtil.LogError($"Could not parse {reaction} as an emote, or the necessary permissions are not given to this bot.", "Config");
+                }
             }
         }
 
@@ -162,14 +178,14 @@ namespace SysBot.ACNHOrders
             if (Globals.Bot.CurrentUserId == Context.User.Id)
                 return true;
 
-            if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode)
-            {
-                await ReplyAsync($"{Context.User.Mention} - You are only permitted to use this command while on the island during your order, and only if you have forgotten something in your order.");
-                return false;
-            }
-            else if (!cfg.DodoModeConfig.AllowDrop)
+            if (!cfg.AllowDrop)
             {
                 await ReplyAsync($"AllowDrop is currently set to false.");
+                return false;
+            }
+            else if (!cfg.DodoModeConfig.LimitedDodoRestoreOnlyMode)
+            {
+                await ReplyAsync($"{Context.User.Mention} - You are only permitted to use this command while on the island during your order, and only if you have forgotten something in your order.");
                 return false;
             }
 

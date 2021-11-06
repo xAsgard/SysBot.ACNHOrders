@@ -192,6 +192,8 @@ namespace SysBot.ACNHOrders
             var message = $"{Context.User.Mention} - You are in the order queue. Position: {position}.";
             if (position > 1)
                 message += $" Your predicted ETA is {QueueExtensions.GetETA(position)}.";
+            else
+                message += " Your order will start after the current order is complete!";
 
             await ReplyAsync(message).ConfigureAwait(false);
         }
@@ -241,7 +243,19 @@ namespace SysBot.ACNHOrders
         [RequireSudo]
         public async Task RemoveAltAsync([Remainder]string identity)
         {
-            if (AntiAbuse.CurrentInstance.Remove(identity))
+            if (NewAntiAbuse.Instance.Remove(identity))
+                await ReplyAsync($"{identity} has been removed from the database.").ConfigureAwait(false);
+            else
+                await ReplyAsync($"{identity} is not a valid identity.").ConfigureAwait(false);
+        }
+
+        [Command("removeAltLegacy")]
+        [Alias("removeLogLegacy", "rmAltLegacy")]
+        [Summary("(Uses legacy database) Removes an identity (name-id) from the local user-to-villager AntiAbuse database")]
+        [RequireSudo]
+        public async Task RemoveLegacyAltAsync([Remainder] string identity)
+        {
+            if (LegacyAntiAbuse.CurrentInstance.Remove(identity))
                 await ReplyAsync($"{identity} has been removed from the database.").ConfigureAwait(false);
             else
                 await ReplyAsync($"{identity} is not a valid identity.").ConfigureAwait(false);
@@ -326,7 +340,7 @@ namespace SysBot.ACNHOrders
 
         private async Task AttemptToQueueRequest(IReadOnlyCollection<Item> items, SocketUser orderer, ISocketMessageChannel msgChannel, VillagerRequest? vr, bool catalogue = false)
         {
-            if (!Globals.Bot.Config.AllowKnownAbusers && AntiAbuse.CurrentInstance.IsGlobalBanned(orderer.Id))
+            if (!Globals.Bot.Config.AllowKnownAbusers && LegacyAntiAbuse.CurrentInstance.IsGlobalBanned(orderer.Id))
             {
                 await ReplyAsync($"{Context.User.Mention} - You are not permitted to use this bot.");
                 return;

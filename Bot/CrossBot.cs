@@ -39,7 +39,6 @@ namespace SysBot.ACNHOrders
         public TimeBlock LastTimeState { get; private set; } = new();
         public bool CleanRequested { private get; set; }
         public bool RestoreRestartRequested { private get; set; }
-        public bool CanFollowPointers { get; private set; }
         public string DodoCode { get; set; } = "No code set yet.";
         public string VisitorInfo { get; set; } = "No visitor info yet.";
         public string TownName { get; set; } = "No town name yet.";
@@ -95,9 +94,6 @@ namespace SysBot.ACNHOrders
             await Connection.SendAsync(SwitchCommand.DetachController(), token).ConfigureAwait(false);
             await Task.Delay(200, token).ConfigureAwait(false);
 
-            // For viewing player vectors
-            //await ViewPlayerVectors(token).ConfigureAwait(false);
-
             // drawing
             await UpdateBlocker(false, token).ConfigureAwait(false);
             await SetScreenCheck(false, token).ConfigureAwait(false);
@@ -107,8 +103,6 @@ namespace SysBot.ACNHOrders
             LogUtil.LogInfo("Attempting get version. Please wait...", Config.IP);
             string version = await SwitchConnection.GetVersionAsync(token).ConfigureAwait(false);
             LogUtil.LogInfo($"sys-botbase version identified as: {version}", Config.IP);
-            if (double.TryParse(version, out var ver))
-                CanFollowPointers = ver > 1.699;
 
             // Get inventory offset
             InventoryOffset = await this.GetCurrentPlayerOffset((uint)OffsetHelper.InventoryOffset, (uint)OffsetHelper.PlayerSize, token).ConfigureAwait(false);
@@ -206,7 +200,7 @@ namespace SysBot.ACNHOrders
 
                     NotifyState(GameState.Active);
 
-                    var owState = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+                    var owState = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
                     if (Config.DodoModeConfig.RefreshMap)
                         if (owState == OverworldState.UserArriveLeaving || owState == OverworldState.Loading) // only refresh when someone leaves/joins or when moving out/in a building
                             await ClearMapAndSpawnInternally(null, Map, Config.DodoModeConfig.RefreshTerrainData, token).ConfigureAwait(false);
@@ -232,6 +226,19 @@ namespace SysBot.ACNHOrders
                     {
                         if (Config.DodoModeConfig.EchoArrivalChannels.Count > 0)
                             await AttemptEchoHook($"> [{DateTime.Now:yyyy-MM-dd hh:mm:ss tt}] 🛬 {LastArrival} from {LastArrivalIsland} is joining {TownName}.{(Config.DodoModeConfig.PostDodoCodeWithNewArrivals ? $" Dodo code is: {DodoCode}." : string.Empty)}", Config.DodoModeConfig.EchoArrivalChannels, token).ConfigureAwait(false);
+
+                        var nid = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverNID, 8, token).ConfigureAwait(false);
+                        var islandId = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverVillageId, 4, token).ConfigureAwait(false);
+                        bool IsSafeNewAbuse = true;
+                        try
+                        {
+                            var newnid = BitConverter.ToUInt64(nid, 0);
+                            var newnislid = BitConverter.ToUInt32(islandId, 0);
+                            var plaintext = $"Treasure island arrival";
+                            IsSafeNewAbuse = NewAntiAbuse.Instance.LogUser(newnislid, newnid, string.Empty, plaintext);
+                            LogUtil.LogInfo($"Arrival logged: NID={newnid} TownID={newnislid} Order details={plaintext}", Config.IP);
+                        }
+                        catch { }
 
                         await Task.Delay(60_000, token).ConfigureAwait(false);
 
@@ -286,7 +293,7 @@ namespace SysBot.ACNHOrders
                 var startTime = DateTime.Now;
                 // Wait for overworld
                 LogUtil.LogInfo($"Begin overworld wait loop.", Config.IP);
-                while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+                while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) != OverworldState.Overworld)
                 {
                     await Task.Delay(1_000, token).ConfigureAwait(false);
                     await Click(SwitchButton.B, 0_100, token).ConfigureAwait(false);
@@ -328,7 +335,7 @@ namespace SysBot.ACNHOrders
             if (!Config.AcceptingCommands)
             {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
-                await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+                await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
                 return;
             }
 
@@ -401,7 +408,7 @@ namespace SysBot.ACNHOrders
         // execute order directly after someone else's order
         private async Task<OrderResult> ExecuteOrderMidway(IACNHOrderNotifier<Item> order, CancellationToken token)
         {
-            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
             order.OrderInitializing(this, string.Empty);
@@ -462,7 +469,7 @@ namespace SysBot.ACNHOrders
                     await ClickConversation(SwitchButton.B, 0_300, token).ConfigureAwait(false);
                     if (echoCount < 5)
                     {
-                        if (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) == OverworldState.Overworld)
+                        if (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) == OverworldState.Overworld)
                         {
                             LogUtil.LogInfo("Reached overworld, waiting for anchor 0 to match...", Config.IP);
                             echoCount++;
@@ -489,7 +496,7 @@ namespace SysBot.ACNHOrders
                 }
             }
 
-            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) != OverworldState.Overworld)
             {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
                 if (ignoreInjection)
@@ -513,7 +520,7 @@ namespace SysBot.ACNHOrders
                 // We need to check for Isabelle's morning announcement
                 for (int i = 0; i < 3; ++i)
                     await Click(SwitchButton.B, 0_400, token).ConfigureAwait(false);
-                while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+                while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) != OverworldState.Overworld)
                 {
                     await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
                     await Task.Delay(1_000, token).ConfigureAwait(false);
@@ -534,7 +541,7 @@ namespace SysBot.ACNHOrders
 
             await EnterAirport(token).ConfigureAwait(false);
 
-            if (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) == OverworldState.Null)
+            if (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) == OverworldState.Null)
                 return OrderResult.Faulted; // we are in the water
 
             // Teleport to Orville (twice, in case we get pulled back)
@@ -561,7 +568,7 @@ namespace SysBot.ACNHOrders
             else
             {
                 var mapData = await Connection.ReadBytesLargeAsync((uint)OffsetHelper.FieldItemStart, MapTerrainLite.ByteSize, Config.MapPullChunkSize, token).ConfigureAwait(false);
-                var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && Config.DodoModeConfig.AllowDrop, (uint)OffsetHelper.FieldItemStart);
+                var offData = clearMap.GetDifferencePrioritizeStartup(mapData, Config.MapPullChunkSize, Config.DodoModeConfig.LimitedDodoRestoreOnlyMode && Config.AllowDrop, (uint)OffsetHelper.FieldItemStart);
                 for (int i = 0; i < offData.Length; ++i)
                     await Connection.WriteBytesAsync(offData[i].ToSend, offData[i].Offset, token).ConfigureAwait(false);
             }
@@ -622,13 +629,13 @@ namespace SysBot.ACNHOrders
             await Task.Delay(1_000, token).ConfigureAwait(false);
             await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
 
-            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
             // Delay for animation
             await Task.Delay(1_200, token).ConfigureAwait(false);
 
-            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) != OverworldState.Overworld)
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
             // Teleport to drop zone (twice, in case we get pulled back)
@@ -654,8 +661,25 @@ namespace SysBot.ACNHOrders
                 }
             }
 
+            var nid = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverNID, 8, token).ConfigureAwait(false);
+            var islandId = await Connection.ReadBytesAsync((uint)OffsetHelper.ArriverVillageId, 4, token).ConfigureAwait(false);
+
+            bool IsSafeNewAbuse = true;
+            try
+            {
+                var newnid = BitConverter.ToUInt64(nid, 0);
+                var newnislid = BitConverter.ToUInt32(islandId, 0);
+                var plaintext = $"Name and ID: {order.VillagerName}-{order.UserGuid}, Villager name and town: {LastArrival}-{LastArrivalIsland}";
+                IsSafeNewAbuse = NewAntiAbuse.Instance.LogUser(newnislid, newnid, order.UserGuid.ToString(), plaintext);
+                LogUtil.LogInfo($"Arrival logged: NID={newnid} TownID={newnislid} Order details={plaintext}", Config.IP);
+            }
+            catch(Exception e) 
+            {
+                LogUtil.LogInfo(e.Message + "\r\n" + e.StackTrace, Config.IP);
+            }
+
             // Check the user against known abusers
-            var IsSafe = AntiAbuse.CurrentInstance.LogUser(LastArrival, LastArrivalIsland, $"{order.VillagerName}-{order.UserGuid}");
+            var IsSafe = LegacyAntiAbuse.CurrentInstance.LogUser(LastArrival, LastArrivalIsland, $"{order.VillagerName}-{order.UserGuid}") && IsSafeNewAbuse;
             if (!IsSafe)
             {
                 if (!Config.AllowKnownAbusers)
@@ -682,7 +706,7 @@ namespace SysBot.ACNHOrders
             // Ensure we're on overworld before starting timer/drop loop
             while (state != OverworldState.Overworld)
             {
-                state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+                state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
                 await Task.Delay(0_500, token).ConfigureAwait(false);
                 await Click(SwitchButton.A, 0_500, token).ConfigureAwait(false);
 
@@ -710,7 +734,7 @@ namespace SysBot.ACNHOrders
             // We check if the user has left by checking whether or not someone hits the Arrive/Leaving state
             startTime = DateTime.Now;
             bool warned = false;
-            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.UserArriveLeaving)
+            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) != OverworldState.UserArriveLeaving)
             {
                 await DropLoop(token).ConfigureAwait(false);
                 await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
@@ -749,7 +773,7 @@ namespace SysBot.ACNHOrders
             await Task.Delay(15_000, token).ConfigureAwait(false);
 
             // Ensure we're on overworld before exiting
-            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false) != OverworldState.Overworld)
+            while (await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false) != OverworldState.Overworld)
             {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
                 await Click(SwitchButton.B, 0_300, token).ConfigureAwait(false);
@@ -811,7 +835,7 @@ namespace SysBot.ACNHOrders
             await Task.Delay(0_200, token).ConfigureAwait(false);
 
             int tries = 0;
-            var state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+            var state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
             while (state == OverworldState.Overworld || state == OverworldState.Null)
             {
                 // Go into airport
@@ -821,7 +845,7 @@ namespace SysBot.ACNHOrders
                 await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
 
-                state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+                state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
 
                 tries++;
                 if (tries > 5)
@@ -832,7 +856,7 @@ namespace SysBot.ACNHOrders
             while (state != OverworldState.Overworld)
             {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
-                state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+                state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
                 tries++;
                 if (tries > 5)
                     break;
@@ -932,23 +956,16 @@ namespace SysBot.ACNHOrders
             if (index < 0 || index > anchors.Length)
                 return false;
 
-            ulong offset = await DodoPosition.FollowMainPointer(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+            ulong offset = await DodoPosition.FollowMainPointer(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
             await SwitchConnection.WriteBytesAbsoluteAsync(anchors[index].Anchor1, offset, token).ConfigureAwait(false);
             await SwitchConnection.WriteBytesAbsoluteAsync(anchors[index].Anchor2, offset + 0x3C, token).ConfigureAwait(false);
 
             return true;
         }
 
-        public async Task SendAnchorRaw(PosRotAnchor anchor, CancellationToken token)
-        {
-            ulong offset = await DodoPosition.FollowMainPointer(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
-            await SwitchConnection.WriteBytesAbsoluteAsync(anchor.Anchor1, offset, token).ConfigureAwait(false);
-            await SwitchConnection.WriteBytesAbsoluteAsync(anchor.Anchor2, offset + 0x3C, token).ConfigureAwait(false);
-        }
-
         private async Task<PosRotAnchor> ReadAnchor(CancellationToken token)
         {
-            ulong offset = await DodoPosition.FollowMainPointer(OffsetHelper.PlayerCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+            ulong offset = await DodoPosition.FollowMainPointer(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
             var bytesA = await SwitchConnection.ReadBytesAbsoluteAsync(offset, 0xC, token).ConfigureAwait(false);
             var bytesB = await SwitchConnection.ReadBytesAbsoluteAsync(offset + 0x3C, 0x4, token).ConfigureAwait(false);
             var sequentinalAnchor = bytesA.Concat(bytesB).ToArray();
@@ -1071,7 +1088,7 @@ namespace SysBot.ACNHOrders
         private async Task Speak(string toSpeak, CancellationToken token)
         {
             // get chat addr
-            ChatAddress = await DodoPosition.FollowMainPointer(OffsetHelper.ChatCoordJumps, CanFollowPointers, token).ConfigureAwait(false);
+            ChatAddress = await DodoPosition.FollowMainPointer(OffsetHelper.ChatCoordJumps, token).ConfigureAwait(false);
             await Task.Delay(0_200, token).ConfigureAwait(false);
 
             await Click(SwitchButton.R, 0_500, token).ConfigureAwait(false);
@@ -1203,11 +1220,6 @@ namespace SysBot.ACNHOrders
                 await Connection.SendAsync(poke, token).ConfigureAwait(false);
                 await Task.Delay(1_000, token).ConfigureAwait(false);
             }
-        }
-
-        public bool Validate(byte[] data)
-        {
-            return InventoryValidator.ValidateItemBinary(data);
         }
 
         // Additional

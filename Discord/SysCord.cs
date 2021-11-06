@@ -253,6 +253,7 @@ namespace SysBot.ACNHOrders
             var mgr = Bot.Config;
             if (!mgr.CanUseCommandUser(msg.Author.Id))
             {
+<<<<<<< HEAD
                 await msg.Channel.SendMessageAsync("You are not permitted to use this command.").ConfigureAwait(false);
                 return true;
             }
@@ -260,6 +261,18 @@ namespace SysBot.ACNHOrders
             {
                 await msg.Channel.SendMessageAsync("You can't use that command here.").ConfigureAwait(false);
                 return true;
+=======
+                if (!mgr.CanUseCommandUser(msg.Author.Id))
+                {
+                    await msg.Channel.SendMessageAsync("You are not permitted to use this command.").ConfigureAwait(false);
+                    return true;
+                }
+                if (!mgr.CanUseCommandChannel(msg.Channel.Id) && msg.Author.Id != Owner && !mgr.CanUseSudo(msg.Author.Id))
+                {
+                    await msg.Channel.SendMessageAsync("You can't use that command here.").ConfigureAwait(false);
+                    return true;
+                }
+>>>>>>> 12613f913ca25b3e7686e9658a412601d2faf051
             }
 
             // Execute the command. (result does not indicate a return value, 

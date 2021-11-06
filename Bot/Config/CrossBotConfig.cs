@@ -49,6 +49,9 @@ namespace SysBot.ACNHOrders
         /// <remarks> Only disable this as a last resort, and you have corrupted your item metadata through other means. </remarks>
         public bool RequireValidInventoryMetadata { get; set; } = true;
 
+        /// <summary> When enabled, players will be allowed to use the drop command in dodorestore mode, or while on the island in order mode </summary>
+        public bool AllowDrop { get; set; } = true;
+
         public DropBotConfig DropConfig { get; set; } = new();
 
         public OrderBotConfig OrderConfig { get; set; } = new();
@@ -84,6 +87,9 @@ namespace SysBot.ACNHOrders
 
         /// <summary> How much extra time, if any, should we wait while orville is connecting to the internet in milliseconds </summary>
         public int ExtraTimeConnectionWait { get; set; } = 1000;
+
+        /// <summary> Should we check instant text offset to see if we are still in dialogue, and if so should we keep mashing B? </summary>
+        public bool AttemptMitigateDialogueWarping { get; set; } = false;
 
         /// <summary> Should we not use instant text? </summary>
         public bool LegacyDodoCodeRetrieval { get; set; } = false;
