@@ -30,6 +30,8 @@ namespace SysBot.ACNHOrders
 
         /// <summary> After which time the Temp Role should be removed. 3 days = 259200 seconds</summary>
         public int TempRoleTime { get; set; } = 259200;
+        /// <summary> How many times you can travels with TempRole </summary>
+        public int TempRoleAmount { get; set; } = 20;
 
         // 64bit numbers white-listing certain channels/users for permission
         public List<ulong> Channels { get; set; } = new();
@@ -38,6 +40,8 @@ namespace SysBot.ACNHOrders
 
         public List<ulong> LoggingChannels { get; set; } = new();
 
+        // Should we ignore all permissions for commands and allow inter-bot talk? This should only be used for debug/apps that layer on top of the acnh bot through discord.
+        public bool IgnoreAllPermissions { get; set; } = false;
         #endregion
 
         #region Features

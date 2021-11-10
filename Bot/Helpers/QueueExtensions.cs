@@ -51,14 +51,12 @@ namespace SysBot.ACNHOrders
                 // Delete our "I'm adding you!", and send the same message that we sent to the general channel.
                 await test.DeleteAsync().ConfigureAwait(false);
             }
-
             // Check for Temp Role
-            string? TempMsg = await TempRole.CurrentInstance.LogTempUserAsync(trader, player).ConfigureAwait(false);
-            if (TempMsg!=null)
+            string? TempMsg = await NewTempRole.Instance.LogTempUserAsync(trader, trader.Id, trader.Username).ConfigureAwait(false);
+            if (TempMsg != null)
             {
                 await trader.SendMessageAsync(TempMsg).ConfigureAwait(false);
             }
-
         }
 
         public static bool AddToQueueSync(IACNHOrderNotifier<Item> itemReq, string playerMention, string playerNameId, out string msg)

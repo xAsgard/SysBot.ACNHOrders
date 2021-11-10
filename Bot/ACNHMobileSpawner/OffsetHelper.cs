@@ -47,18 +47,8 @@
         public const ulong TimeAddress = 0x0BD29188;
 
         // pointers
-<<<<<<< HEAD
-
-
-
-
-        public static readonly long[] PlayerCoordJumps = new long[5] { 0x3A33980L, 0x18L, 0x178L, 0xD0L, 0xD8L };
-        public static readonly long[] ChatCoordJumps = new long[2] { 0x3CFDC60L, 0x40L };
-=======
         public static readonly long[] PlayerCoordJumps = new long[5] { 0x460ED68L, 0x18L, 0x178L, 0xD0L, 0xD8L };
         public static readonly long[] ChatCoordJumps = new long[2] { 0x4A3E938L, 0x40L };
->>>>>>> 12613f913ca25b3e7686e9658a412601d2faf051
-
 
         // exefs (main)
         public const ulong AnimationSpeedOffset = 0x043A4B30;

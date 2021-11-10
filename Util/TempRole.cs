@@ -6,160 +6,166 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 using SysBot.Base;
 
 namespace SysBot.ACNHOrders
 {
-    public class TempRoleIdentifier
+    [Serializable]
+    public class TempRoleIdentifier<T>
     {
-        public readonly string FirstOrderDate;
-        public readonly string LastOrderDate;
-        public readonly string TempOver;
-        public readonly string Identity;
+        public ulong discordid { get; set; }
+        public int TravelCount { get; set; }
+        public DateTime FirstOrderDate { get; set; }
+        public DateTime LastOrderDate { get; set; }
+        public string Username { get; set; }
 
-        public TempRoleIdentifier(string OrderDate, string RemovedDate, string TempEnded, string id)
+        public TempRoleIdentifier(ulong userid, int travels, DateTime firstorder, DateTime lastorder, string name)
         {
-            FirstOrderDate = OrderDate;
-            LastOrderDate = RemovedDate;
-            TempOver = TempEnded;
-            Identity = id;
+            discordid = userid;
+            TravelCount = travels;
+            FirstOrderDate = firstorder;
+            LastOrderDate = lastorder;
+            Username = name;
         }
 
-        public override string ToString()
+#pragma warning disable CS8618 // Ein Non-Nullable-Feld muss beim Beenden des Konstruktors einen Wert ungleich NULL enthalten. Erwägen Sie die Deklaration als Nullable.
+        public TempRoleIdentifier()
+#pragma warning restore CS8618 // Ein Non-Nullable-Feld muss beim Beenden des Konstruktors einen Wert ungleich NULL enthalten. Erwägen Sie die Deklaration als Nullable.
         {
-            return $"{FirstOrderDate},{LastOrderDate},{TempOver},{Identity}";
         }
 
-        public static TempRoleIdentifier? FromString(string s)
-        {
-            if (string.IsNullOrWhiteSpace(s))
-                return null;
-
-            var splits = s.Split(',');
-            if (splits.Length != 4)
-                return null;
-
-            return new TempRoleIdentifier(splits[0], splits[1], splits[2], splits[3]);
-        }
-
+        public override string ToString() => JsonSerializer.Serialize(this, typeof(TempRoleIdentifier<T>));
+        public static TempRoleIdentifier<T>? FromString(string s) => (TempRoleIdentifier<T>?)JsonSerializer.Deserialize(s, typeof(TempRoleIdentifier<T>));
     }
 
-    public class TempRole
-    {
-        private const string PathTemp = "tempuser.txt";
-
-        public List<TempRoleIdentifier> TempRoleUsers { get; private set; } = new();
-
-        public static TempRole CurrentInstance = new();
-
-        public TempRole()
+        public class TempRoleDetection<T>
         {
-            if (!File.Exists(PathTemp))
+            private const string PathTemp = "tempusernew.txt";
+
+            public List<TempRoleIdentifier<T>> TempRoleUsers { get; private set; } = new();
+
+            public TempRoleDetection()
             {
-                var str = File.Create(PathTemp);
-                str.Close();
-            }
-
-            LoadAllUserInfo();
-        }
-
-        private void SaveAllUserInfo()
-        {
-            string[] toSave = new string[TempRoleUsers.Count];
-            for (int i = 0; i < TempRoleUsers.Count; ++i)
-                toSave[i] = $"{TempRoleUsers[i]}\r\n";
-            File.WriteAllLines(PathTemp, toSave);
-        }
-
-        private void LoadAllUserInfo()
-        {
-            TempRoleUsers.Clear();
-            var txt = File.ReadAllText(PathTemp);
-            var infos = txt.Split(new string[1] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var inf in infos)
-            {
-                var ident = TempRoleIdentifier.FromString(inf);
-                if (ident != null)
-                    TempRoleUsers.Add(ident);
-            }
-        }
-
-        /// <summary>
-        /// Log Temporary User
-        /// </summary>
-        /// <returns>If temporary user, returns string with state!</returns>
-        public async System.Threading.Tasks.Task<string?> LogTempUserAsync(SocketUser trader, string player)
-        {
-            if (trader is SocketGuildUser socketUser)
-            {
-                SocketGuild socketGuild = socketUser.Guild;
-                ulong uTempRole = Convert.ToUInt64(Globals.Bot.Config.RoleUseBotTemp);
-                SocketRole socketRole = socketGuild.GetRole(uTempRole);
-
-                if (socketUser.Roles.Any(r => r.Id == socketRole.Id))
+                if (!File.Exists(PathTemp))
                 {
-                    Double dTempRoleTime = Convert.ToDouble(Globals.Bot.Config.TempRoleTime);
-                    DateTime TempEnd = DateTime.Now.AddSeconds(dTempRoleTime);
-                    string id = trader.Id.ToString();
+                    var str = File.Create(PathTemp);
+                    str.Close();
+                }
+                LoadAllUserInfo();
+            }
 
-                    var exists = TempRoleUsers.FirstOrDefault(x => x.TempOver == "false" && x.Identity == id);
-                    if (exists == default)
+            private void SaveAllUserInfo()
+            {
+                string[] toSave = new string[TempRoleUsers.Count];
+                for (int i = 0; i < TempRoleUsers.Count; ++i)
+                    toSave[i] = $"{TempRoleUsers[i]}\r\n";
+                File.WriteAllLines(PathTemp, toSave);
+            }
+
+            private void LoadAllUserInfo()
+            {
+                TempRoleUsers.Clear();
+                var txt = File.ReadAllText(PathTemp);
+                var infos = txt.Split(new string[3] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var inf in infos)
+                {
+                    var ident = TempRoleIdentifier<T>.FromString(inf);
+                    if (ident != null)
+                        TempRoleUsers.Add(ident);
+                }
+            }
+
+            /// <summary>
+            /// Log Temporary User
+            /// </summary>
+            /// <returns>If temporary user, returns string with state!</returns>
+            public async Task<string?> LogTempUserAsync(SocketUser trader, ulong userid, string player)
+            {
+                
+                if (trader is SocketGuildUser socketUser && userid != default(ulong))
+                {
+                    SocketGuild socketGuild = socketUser.Guild;
+                    ulong uTempRole = Convert.ToUInt64(Globals.Bot.Config.RoleUseBotTemp);
+                    SocketRole socketRole = socketGuild.GetRole(uTempRole);
+                    int TempAmount = Globals.Bot.Config.TempRoleAmount;
+
+                    if (socketUser.Roles.Any(r => r.Id == socketRole.Id))
                     {
-                        TempRoleUsers.Add(new TempRoleIdentifier(DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss"), DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss"), "false", id));
-                        SaveAllUserInfo();
-                        LogUtil.LogInfo($"FirstTempOrder for {player}-{id}.", Globals.Bot.Config.IP);
-                        return $"Your temporary access was activated and will end with your last order after {TempEnd:yyyy-MM-dd hh:mm:ss tt}.";
-                    }
-
-                    //exists = TempRoleUsers.FirstOrDefault(x => x.TempOver == "false" && x.Identity == id);
-                    if (exists != default && (exists.Identity == id && exists.TempOver == "false"))
-                    {
-                        DateTime eFirstOrder = DateTime.ParseExact(exists.FirstOrderDate, "yyyy-dd-M--HH-mm-ss", null);
-                        DateTime eLastOrder = DateTime.ParseExact(exists.LastOrderDate, "yyyy-dd-M--HH-mm-ss", null);
-                        TempEnd = eFirstOrder.AddSeconds(dTempRoleTime);
-                        TempRoleUsers.Remove(exists);
-
-                        if (DateTime.Now < eFirstOrder.AddSeconds(dTempRoleTime))
+                        var exists = TempRoleUsers.FirstOrDefault(x => x.discordid != default(ulong) && x.discordid.Equals(userid) && (!x.Username.Contains("expired")));
+                        if (exists == null)
                         {
-                            TempRoleUsers.Add(new TempRoleIdentifier(eFirstOrder.ToString("yyyy-dd-M--HH-mm-ss"), DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss"), "false", id));
+                            TempRoleUsers.Add(new TempRoleIdentifier<T>(userid, 1, DateTime.Now, DateTime.Now, player));
                             SaveAllUserInfo();
-                            LogUtil.LogInfo($"TempRoleOrder updated for {player}-{id}.", Globals.Bot.Config.IP);
-                            return $"Your temporary access will end with your last order after {TempEnd:yyyy-MM-dd hh:mm:ss tt}.";
+                            LogUtil.LogInfo($"FirstTempOrder for {player}-{userid}.", Globals.Bot.Config.IP);
+                            return $"**This is your first order with temporary role** - you have {TempAmount - 1} orders left.";
                         }
 
-                        if (DateTime.Now >= eFirstOrder.AddSeconds(dTempRoleTime))
+                        //exists = TempRoleUsers.FirstOrDefault(x => x.TempOver == "false" && x.Identity == id);
+                        if (exists != default && exists.discordid != default(ulong) && exists.discordid.Equals(userid))
                         {
-                            TempRoleUsers.Add(new TempRoleIdentifier(eFirstOrder.ToString("yyyy-dd-M--HH-mm-ss"), DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss"), "true", id));
-                            SaveAllUserInfo();
-                            LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: TempRole will be removed for {player}-{id}.", Globals.Bot.Config.IP);
-                            await socketUser.RemoveRoleAsync(socketRole).ConfigureAwait(false);
-                            return $"**Your temporary access has unfortunately now expired. Access to MerchantBot will disappear after this order.**";
+                            int TimesTraveled = exists.TravelCount + 1;
+                            DateTime FirstOrder = exists.FirstOrderDate;
+                            TempRoleUsers.Remove(exists);
+
+                            if (TimesTraveled < TempAmount)
+                            {
+                                TempRoleUsers.Add(new TempRoleIdentifier<T>(userid, TimesTraveled, FirstOrder, DateTime.Now, player));
+                                SaveAllUserInfo();
+                                LogUtil.LogInfo($"TempRoleOrder updated for {player}-{userid}-TravelCount{TimesTraveled:00}.", Globals.Bot.Config.IP);
+                                return $"**You are using the temporary role** - you have {TempAmount - TimesTraveled} order(s) left.";
+                            }
+
+                            if (TimesTraveled >= TempAmount)
+                            {
+                                TempRoleUsers.Add(new TempRoleIdentifier<T>(userid, TimesTraveled, FirstOrder, DateTime.Now, "expired-" + player));
+                                SaveAllUserInfo();
+                                LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: TempRole will be removed for {player}-{userid}.", Globals.Bot.Config.IP);
+                                await socketUser.RemoveRoleAsync(socketRole).ConfigureAwait(false);
+                                return $"**Your temporary access has unfortunately now expired. Access to MerchantBot will disappear after this order.**";
+                            }
                         }
+
+                        LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: Issue with TempRole for {player}-{userid}.", Globals.Bot.Config.IP);
+                        return null;
                     }
 
-                    LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: Issue with TempRole for {player}-{id}.", Globals.Bot.Config.IP);
                     return null;
+
                 }
 
+                LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: Issue with SocketGuildUser {player}-{trader.Id}.", Globals.Bot.Config.IP);
                 return null;
-
             }
 
-            LogUtil.LogInfo($"Pinging <@{ Globals.Self.Owner}>: Issue with SocketGuildUser {player}-{trader.Id}.", Globals.Bot.Config.IP);
-            return null;
+            //public bool Remove(string id)
+            //{
+            //    if (string.IsNullOrWhiteSpace(id))
+            //        return false;
+            //    var exists = TempRoleUsers.FirstOrDefault(x => x.Identity.StartsWith(id));
+            //    if (exists == default)
+            //        return false;
+
+            //    TempRoleUsers.Remove(exists);
+            //    SaveAllUserInfo();
+            //    return true;
+            //}
         }
 
-        //public bool Remove(string id)
-        //{
-        //    if (string.IsNullOrWhiteSpace(id))
-        //        return false;
-        //    var exists = TempRoleUsers.FirstOrDefault(x => x.Identity.StartsWith(id));
-        //    if (exists == default)
-        //        return false;
-
-        //    TempRoleUsers.Remove(exists);
-        //    SaveAllUserInfo();
-        //    return true;
-        //}
+    public class NewTempRole : TempRoleDetection<uint>
+    {
+        private static NewTempRole? instance = null;
+        public static NewTempRole Instance
+        { get
+            {
+                if (instance == null)
+                    instance = new();
+                return instance;
+            }
+        }
+        public NewTempRole() : base() { }
     }
-}
+
+    }
+
