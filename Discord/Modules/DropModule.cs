@@ -57,6 +57,8 @@ namespace SysBot.ACNHOrders
         [RequireQueueRole(nameof(Globals.Bot.Config.RoleUseBot))]
         public async Task RequestRestoreLoopDodoAsync()
         {
+            if (!Globals.Bot.Config.DodoModeConfig.AllowSendDodo && !Globals.Bot.Config.CanUseSudo(Context.User.Id) && Globals.Self.Owner != Context.User.Id)
+                return;
             if (!Globals.Bot.Config.DodoModeConfig.LimitedDodoRestoreOnlyMode)
                 return;
             try
