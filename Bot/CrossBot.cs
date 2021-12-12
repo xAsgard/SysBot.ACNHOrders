@@ -354,7 +354,7 @@ namespace SysBot.ACNHOrders
 
             var timeBytes = await Connection.ReadBytesAsync((uint)OffsetHelper.TimeAddress, TimeBlock.SIZE, token).ConfigureAwait(false);
             var newTimeState = timeBytes.ToClass<TimeBlock>();
-            if (LastTimeState.Hour < 5 && newTimeState.Hour == 5)
+            if (LastTimeState.Hour < 5 && newTimeState.Hour >= 5)
                 GameIsDirty = true;
             LastTimeState = newTimeState;
 
@@ -770,7 +770,9 @@ namespace SysBot.ACNHOrders
             order.OrderFinished(this, Config.OrderConfig.CompleteOrderMessage, Config.Name);
             if (order.VillagerName != string.Empty && Config.OrderConfig.EchoArrivingLeavingChannels.Count > 0)
                 await AttemptEchoHook($"> Visitor completed order, and is now leaving: {order.VillagerName}", Config.OrderConfig.EchoArrivingLeavingChannels, token).ConfigureAwait(false);
-            
+
+
+
             await Task.Delay(5_000, token).ConfigureAwait(false);
             await UpdateBlocker(false, token).ConfigureAwait(false);
             await Task.Delay(15_000, token).ConfigureAwait(false);
