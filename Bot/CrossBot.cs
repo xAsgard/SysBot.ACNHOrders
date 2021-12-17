@@ -557,7 +557,7 @@ namespace SysBot.ACNHOrders
                 await SendAnchorBytes(3, token).ConfigureAwait(false);
                 if (numChecks-- < 0)
                     return OrderResult.Faulted;
-
+                
                 await Task.Delay(0_500, token).ConfigureAwait(false);
             }
 
@@ -846,7 +846,9 @@ namespace SysBot.ACNHOrders
 
         private async Task EnterAirport(CancellationToken token)
         {
-            await Task.Delay(0_200, token).ConfigureAwait(false);
+            // Pause any freezers to account for loading screen lag
+            await SwitchConnection.SetFreezePauseState(true, token).ConfigureAwait(false);
+            await Task.Delay(0_200 + Config.ExtraTimeEnterAirportWait, token).ConfigureAwait(false);
 
             int tries = 0;
             var state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
@@ -857,7 +859,7 @@ namespace SysBot.ACNHOrders
                 await SetStick(SwitchStick.LEFT, 20_000, 20_000, 0_400, token).ConfigureAwait(false);
                 await Task.Delay(0_500, token).ConfigureAwait(false);
                 await SetStick(SwitchStick.LEFT, 0, 0, 1_500, token).ConfigureAwait(false);
-                await Task.Delay(1_000, token).ConfigureAwait(false);
+                await Task.Delay(1_000 + Config.ExtraTimeEnterAirportWait, token).ConfigureAwait(false);
 
                 state = await DodoPosition.GetOverworldState(OffsetHelper.PlayerCoordJumps, token).ConfigureAwait(false);
 
@@ -878,6 +880,7 @@ namespace SysBot.ACNHOrders
 
             // Delay for animation
             await Task.Delay(1_200, token).ConfigureAwait(false);
+            await SwitchConnection.SetFreezePauseState(false, token).ConfigureAwait(false);
         }
 
         private async Task InjectOrder(MapTerrainLite updatedMap, CancellationToken token)
